@@ -1,9 +1,11 @@
 class Movie < ActiveRecord::Base
+  before_validation :cleanup_title
   # Returns an array containing allowed  values for ratings
   def self.all_ratings ; %w[G PG PG-13 R NC-17] ; end
 
   # Validate model fields
-  validates :title, :presence => true, :uniqueness => true, :length => { :minimum => 3 }
+  validates :title, :presence => true, :length => {minimum: 3}, 
+    :uniqueness => true
   validates :release_date, :presence => true
   validate :released_1930_or_later # uses custom validator below
   validates :rating, :inclusion => {:in => Movie.all_ratings},
@@ -22,5 +24,12 @@ class Movie < ActiveRecord::Base
   @@grandfathered_date = Date.parse('1 Nov 1968')
   def grandfathered?
     release_date && release_date >= @@grandfathered_date
+  end
+
+  # For :title, capitalize the first letter of each word, remove extra white
+  # spaces.
+  def cleanup_title
+    self.title = self.title.strip.split(/\s+/).map(&:downcase).
+      map(&:capitalize).join(' ')
   end
 end
